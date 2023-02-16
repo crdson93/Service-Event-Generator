@@ -11,8 +11,6 @@ using System.Text.RegularExpressions;
 using Microsoft.VisualBasic;
 using System.Windows.Controls;
 using System.IO;
-using Smartsheet.Api;
-using Smartsheet.Api.Models;
 
 namespace Service_Event_Generator
 {
