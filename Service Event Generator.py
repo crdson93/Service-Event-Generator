@@ -234,7 +234,7 @@ def request_initial_settings(self):
             settings_request_window.iconphoto(False, image)
             settings_request_window.winfo_toplevel().title("Agent Setting")
             settings_request_window.configure(bg=jhblue)
-            settings_request_window.geometry('300x200')
+            settings_request_window.geometry('290x200')
             settings_request_window.protocol("WM_DELETE_WINDOW", lambda: AgentSettings.on_closing(AgentSettings))
             AgentSettings.extension = tk.StringVar()
             AgentSettings.agentType = tk.StringVar()
@@ -304,18 +304,18 @@ def welcome_message(setting):
     welcome_message_window.attributes('-topmost', True)
     welcome_message_window.winfo_toplevel().title("Welcome")
     welcome_message_window.configure(bg=jhblue)
-    welcome_message_window.geometry('600x785')
+    welcome_message_window.geometry('600x745')
     welcome_message_window.iconphoto(False, image)
 
-    welcome_message_label = tk.Label(welcome_message_window, text="Welcome to the Service Event Generator! The purpose of this program is to give you, the agent, an easy to use tool that can automatically format a Service Event with the information you provide in the input fields. All of the features found in the previous version have been implemented in this version, as well as a few new improvements: Spellcheck and Send Event. The Spellcheck feature will look at the Reason for Calling field (the second to last field) and alert you to any misspelled words for correction. It will also highlight any misspelled words in red that you can right click to quickly correct without launching the full dialog via the Spellcheck button. The Send Event button will be used when the Synapsys Plugin in Call Center does not load. It will automatically enter the event in to Smartsheet for a ResQ agent to submit for you. This feature does have safeguards in place to ensure you do not enter duplicate events and it will also refer you to enter a tech error form if you use it. Please enjoy using this program and if you have any issues report them to your supervisor who will direct them to the appropriate parties.", wraplength=575, bg=jhblue, fg='white', font="Poppins 14")
+    welcome_message_label = tk.Label(welcome_message_window, text="Welcome to the Service Event Generator! The purpose of this program is to give you, the agent, an easy to use tool that can automatically format a Service Event with the information you provide in the input fields. All of the features found in the previous version have been implemented in this version, as well as a few new improvements: Spellcheck and Send Event. The Spellcheck feature will look at the Reason for Calling field (the second to last field) and alert you to any misspelled words for correction. It will also highlight any misspelled words in red that you can right click to quickly correct without launching the full dialog via the Spellcheck button. The Send Event button will be used when the Synapsys Plugin in Call Center does not load. It will automatically enter the event in to Smartsheet for a ResQ agent to submit for you. This feature does have safeguards in place to ensure you do not enter duplicate events and it will also refer you to enter a tech error form if you use it. Please enjoy using this program and if you have any issues report them to your supervisor who will direct them to the appropriate parties.", wraplength=575, bg=jhblue, fg='white', font="Poppins 18")
     welcome_message_label.place(x=10, y=5)
     
     welcome_checkbutton = tk.Checkbutton(welcome_message_window, font="Poppins 12", variable=welcome_message_status, bg=jhblue)
-    welcome_checkbutton.place(x=145, y=685)
+    welcome_checkbutton.place(x=145, y=645)
     welcome_checkbutton_label = tk.Label(welcome_message_window, font="Poppins 12", bg=jhblue, fg='white', text="Show welcome message on startup")
-    welcome_checkbutton_label.place(x = 165, y = 688)
+    welcome_checkbutton_label.place(x = 165, y = 648)
     welcome_button = tk.Button(welcome_message_window, font="Poppins 12", text="Let's go!", command=close_window)
-    welcome_button.place(x=240, y=730)
+    welcome_button.place(x=240, y=690)
 
 #Configure name and reference number labels depending on what agent type is set to if there is a settings file already
 def check_settings():
@@ -415,10 +415,10 @@ class MainApplication(tk.Frame):
         self.copypaste_label = tk.Label(root, bg = jhblue, fg = 'white', font = ('Poppins', 12), text = "Copy and paste to Synapsys")
         
     def create_field_entries(self):
-        self.customer_name_entry = tk.Entry(root, textvariable = self.customer_name, width = 30, font = ('Poppins', 14))
-        self.reference_number_entry = tk.Entry(root, width = 30, textvariable = self.reference_number, font = ('Poppins', 14))
-        self.contact_info_entry = tk.Entry(root, textvariable = self.contact_info, validate = 'all', width = 30, font = ('Poppins', 14))
-        self.debit_card_number_entry = tk.Entry(root, textvariable = self.debit_card_number, validate = 'all', validatecommand = (self.check_debit_card_digits_cmd, '%P'), width = 30, font = ('Poppins', 14))
+        self.customer_name_entry = tk.Entry(root, textvariable = self.customer_name, width = 33, font = ('Poppins', 14))
+        self.reference_number_entry = tk.Entry(root, width = 33, textvariable = self.reference_number, font = ('Poppins', 14))
+        self.contact_info_entry = tk.Entry(root, textvariable = self.contact_info, validate = 'all', width = 33, font = ('Poppins', 14))
+        self.debit_card_number_entry = tk.Entry(root, textvariable = self.debit_card_number, validate = 'all', validatecommand = (self.check_debit_card_digits_cmd, '%P'), width = 33, font = ('Poppins', 14))
         
     def create_radiobuttons(self):
         MainApplication.account_radio_button = tk.Radiobutton(root, variable = self.reference_radio_value, value = "Account #", bg = jhblue, indicatoron = 1)
@@ -433,9 +433,9 @@ class MainApplication(tk.Frame):
         self.event_scrollbar = tk.Scrollbar(root, orient = 'vertical')
        
     def create_text_entries(self):
-        MainApplication.transactions_entry = tk.Text(root, width = 43, font = ('Poppins', 10), wrap = 'word', yscrollcommand = self.transaction_scrollbar.set)
-        MainApplication.reason_entry = tk.Text(root, width = 43, font = ('Poppins', 10), wrap = 'word', yscrollcommand = self.reason_scrollbar.set)
-        MainApplication.event_entry = tk.Text(root, width = 54, height = 5, font = ('Poppins', 10), wrap = 'word', yscrollcommand = self.event_scrollbar.set)
+        MainApplication.transactions_entry = tk.Text(root, width = 49, font = ('Poppins', 10), wrap = 'word', yscrollcommand = self.transaction_scrollbar.set)
+        MainApplication.reason_entry = tk.Text(root, width = 49, font = ('Poppins', 10), wrap = 'word', yscrollcommand = self.reason_scrollbar.set)
+        MainApplication.event_entry = tk.Text(root, width = 61, height = 7, font = ('Poppins', 10), wrap = 'word', yscrollcommand = self.event_scrollbar.set)
  
     def create_buttons(self):
         self.event_copy = tk.Button(root, text = "Copy text", font = ('Poppins', 12), fg = jhblue)
@@ -953,7 +953,7 @@ class AgentSettings():
         self.settings_request_window.iconphoto(False, image)
         self.settings_request_window.winfo_toplevel().title("Agent Setting")
         self.settings_request_window.configure(bg=jhblue)
-        self.settings_request_window.geometry('300x200')
+        self.settings_request_window.geometry('290x200')
         self.settings_request_window.protocol("WM_DELETE_WINDOW", self.on_closing)
         AgentSettings.extension = tk.StringVar()
         AgentSettings.agentType = tk.StringVar()
@@ -966,13 +966,13 @@ class AgentSettings():
         self.cu_agent_label = tk.Label(self.settings_request_window, text= "CU Agent", font=('Poppins 12'), bg=jhblue, fg="white")
         self.save = tk.Button(self.settings_request_window, text="Save", command = lambda: self.save_settings(self.settings_request_window))
         self.info.place(x=20,y=5)
-        self.extensionEntry.place(x=115, y=68, height=25)
+        self.extensionEntry.place(x=120, y=68, height=25)
         self.extension_label.place(x=25, y=67)
-        self.bank_agentType.place(x=30, y=110, width=20, height=20)
-        self.cu_agentType.place(x=165, y=110, width=20, height=20)
-        self.bank_agent_label.place(x=50, y=105)
-        self.cu_agent_label.place(x=185, y=105)
-        self.save.place(x=115,y=145)
+        self.bank_agentType.place(x=35, y=110, width=20, height=20)
+        self.cu_agentType.place(x=170, y=110, width=20, height=20)
+        self.bank_agent_label.place(x=55, y=105)
+        self.cu_agent_label.place(x=190, y=105)
+        self.save.place(x=120,y=145)
         if AgentSettings.agentType.get() == 'Credit Union':
             MainApplication.customer_name_label.config(text='Member Name:*')
             MainApplication.accountnum_label.config(text="Member #")
@@ -1067,7 +1067,7 @@ class AgentSettings():
             self.settings_request_window.iconphoto(False, image)
             self.settings_request_window.winfo_toplevel().title("Agent Setting")
             self.settings_request_window.configure(bg=jhblue)
-            self.settings_request_window.geometry('300x200')
+            self.settings_request_window.geometry('290x200')
             self.settings_request_window.protocol("WM_DELETE_WINDOW", self.on_closing)
             AgentSettings.extension = tk.StringVar()
             AgentSettings.agentType = tk.StringVar()
@@ -1227,7 +1227,7 @@ class SpellCheckDialog(tk.Toplevel):
 
         #Call the create buttons function and close the window if the user ignores the spelling recommendation
         self.create_buttons()
-        self.geometry("590x300")
+        self.geometry("570x255")
         self.protocol("WM_DELETE_WINDOW", self.ignore)
         self.iconphoto(False, image)
         
@@ -1368,7 +1368,7 @@ class CustomSmartsheet(smartsheet.Smartsheet):
             CustomSmartsheet.fi_list = self.get_picklist_values(self.sheet_id, 'Credit Unions')
         elif AgentSettings.agentType == 'Bank':
             CustomSmartsheet.fi_list = self.get_picklist_values(self.sheet_id, 'Banks')
-        self.label = tk.Label(self.smartsheet_event_window, text="If you are needing to send this Service Event to be submitted for you due to a Synapsys access issue please provide the following information", font=('Poppins 12'), bg=jhblue, fg="white", wraplength=450)
+        self.label = tk.Label(self.smartsheet_event_window, text="If you are needing to send this Service Event to be submitted for you due to a Synapsys access issue please provide the following information", font=('Poppins 12'), bg=jhblue, fg="white", wraplength=400)
         self.label.place(x = 10, y = 10)
         self.start_time = time.time()
         if MainApplication.phonecopy == '':
