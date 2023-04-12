@@ -41,7 +41,7 @@ def window_icon():
         return image
     else:
         #image = tk.PhotoImage(file="C:\\Users\\cbrichardson\\source\\repos\\Service Event Generator\\jh.png")
-        image = tk.PhotoImage(file="C:\\Users\\Chris\\Documents\\SE Gen V12\\jh.png")
+        image = tk.PhotoImage(file="C:\\Users\\cbrichardson\\Documents\\GitHub\\Service-Event-Generator\\jh.png")
         return image
 
 
