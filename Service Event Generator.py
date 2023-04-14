@@ -10,45 +10,43 @@ import time
 import webbrowser
 import re
 import sys
-
-#SE Geneator Test sheet ID = 2320617425921924
-#Smartsheet token = V3fXgr7Mlyo1ORkTq1pkG2OHc5x0O6a1m5mS7
+import smartsheet.models, smartsheet.sheets, smartsheet.search, smartsheet.users
 
 #Set our network folder for the dictionary that will be static
-jcc_network_drive_folder = "S:/All Technical & Support Files/Dictionaries/SEGeneratorDictionary.json"
-home_network_drive_folder = "/Volumes/home/Dictionaries/SEGeneratorDictionary.json"
-corp_network_folder = "C:/Users/cbrichardson/Documents/SEGeneratorDictionary.json"
-win_network_folder = "C:/Users/Chris/Documents/SE Gen V12/SEGeneratorDictionary.json"
+dictionary = "S:/All Technical & Support Files/Dictionaries/SEGeneratorDictionary.json"
 
 # Initialize SymSpell library for spellchecking and set dictionary path to use
 sym_spell = SymSpell(max_dictionary_edit_distance=3, prefix_length=7)
 frequency_count = 10000
-correction_dictionary_path = "S:/All Technical & Support Files/Dictionaries/dictionaryupdates.json"
-#correction_dictionary_path = "C:/Users/Chris/Documents/SE Gen V12/DictionaryUpdates.json"
+correction_dictionary_path = "S:/All Technical & Support Files/Dictionaries/DictionaryUpdates.json"
 
-#open dictionary file
-with open(jcc_network_drive_folder, 'r') as dictionary_file:
+#Smartsheet API token for this program specifically
+api_token = 'V3fXgr7Mlyo1ORkTq1pkG2OHc5x0O6a1m5mS7'
+
+# - Function to translate an rgb tuple of int to a tkinter friendly color code - #
+def _from_rgb(rgb):
+    return '#%02x%02x%02x' % rgb  
+
+# - Colors used for programs color scheme - #
+jhblue = _from_rgb((26, 54, 104))
+highlight = _from_rgb((104, 226, 255))
+
+#open dictionary file and create dictionary entries
+with open(dictionary, 'r') as dictionary_file:
     dictionary_data = json.load(dictionary_file)
 
 for word, count in dictionary_data.items():
     sym_spell.create_dictionary_entry(word, count)
 
-#Set the icon of our application window
+#Set the icon of our application windows
 def window_icon():
     global image
     if getattr(sys, 'frozen', False):
         image = tk.PhotoImage(file=os.path.join(sys._MEIPASS, "files/jh.png"))
         return image
     else:
-        #image = tk.PhotoImage(file="C:\\Users\\cbrichardson\\source\\repos\\Service Event Generator\\jh.png")
         image = tk.PhotoImage(file="C:\\Users\\cbrichardson\\Documents\\GitHub\\Service-Event-Generator\\jh.png")
         return image
-
-
-# - Function to translate an rgb tuple of int to a tkinter friendly color code - #
-def _from_rgb(rgb):
-    return '#%02x%02x%02x' % rgb  
-
 
 #handle options within the Spell Check pop up window
 def handle_options(word: str, suggestions):
@@ -57,6 +55,7 @@ def handle_options(word: str, suggestions):
     dialog = SpellCheckDialog(root, word, suggestions)
     root.wait_window(dialog)
 
+    #if the selected button is correct then apply the correction, if the selected button is add, add the word to the update dictionary for review
     if dialog.result[0] == "correct":
         apply_correction(word, dialog.result[1])
     elif dialog.result[0] == "add":
@@ -73,6 +72,7 @@ def handle_options(word: str, suggestions):
 
 #Function to apply the corrected word to the text entry
 def apply_correction(word, corrected_word):
+    #Get the text we need to update and delete it
     text = MainApplication.reason_entry.get("1.0", tk.END)
     MainApplication.reason_entry.delete("1.0", tk.END)
 
@@ -92,7 +92,7 @@ def apply_correction(word, corrected_word):
     MainApplication.reason_entry.insert("1.0", corrected_text)
     MainApplication.combine_text(MainApplication)
 
-#main spellcheck function, will add suggestions to a list
+#main spellcheck function, will add suggestions to a list and will show an error message if no misspelled words are found
 def spellcheck():
     text = MainApplication.reason_entry.get("1.0", tk.END).strip()
     misspelled_words = 0
@@ -116,7 +116,7 @@ def spellcheck():
     elif misspelled_words == 0:
         messagebox.showinfo("Attention", "No misspelled words were found")
 
-#check if text has changed and if so call the update to find new misspelled words
+#check if text has changed and if so call the update misspelled tags function to find new misspelled words
 def on_text_changed(event):
     if MainApplication.reason_entry.after_id is not None:
         MainApplication.reason_entry.after_cancel(MainApplication.reason_entry.after_id)
@@ -200,7 +200,62 @@ def replace_clicked_word(original_word, replacement_word):
     update_misspelled_tags(replacement_word)
     MainApplication.combine_text(MainApplication)
 
-#request settings from the agent if no settings file is found
+#show a welcome message and set a setting to show on startup or not, calls RequestInitialSettings upon close
+def welcome_message(setting):
+    config = ConfigParser()
+    ini_file_path = os.path.abspath("ServiceEventGeneratorSettings.ini")
+    welcome_message_status = tk.IntVar()
+
+    if os.path.exists(ini_file_path):
+        with open(ini_file_path, 'r', encoding='utf-8-sig') as f:
+            config.read_file(f)
+        if setting == 1:
+            pass
+        elif config.has_section('main'):
+            if config.get('main', 'welcome message') == 'no':
+                return
+            
+    def close_window():
+        if setting == 1:
+            if welcome_message_status.get() == 1:
+                with open(ini_file_path, 'w') as f:
+                    config.set('main', 'welcome message', 'yes')
+                    config.write(f)
+            welcome_message_window.destroy()
+        else:
+            if config.has_section('main'):
+                pass
+            else:
+                config.add_section('main')
+            if welcome_message_status.get() == 1:
+                with open(ini_file_path, 'w') as f:
+                    config.set('main', 'welcome message', 'yes')
+                    config.write(f)
+            elif welcome_message_status.get() == 0:
+                with open(ini_file_path, 'w') as f:
+                    config.set('main', 'welcome message', 'no')
+                    config.write(f)
+            welcome_message_window.destroy()
+            request_initial_settings(AgentSettings)
+
+    welcome_message_window = tk.Toplevel(root)
+    welcome_message_window.attributes('-topmost', True)
+    welcome_message_window.winfo_toplevel().title("Welcome")
+    welcome_message_window.configure(bg=jhblue)
+    welcome_message_window.geometry('600x745')
+    welcome_message_window.iconphoto(False, image)
+
+    welcome_message_label = tk.Label(welcome_message_window, text="Welcome to the Service Event Generator! The purpose of this program is to give you, the agent, an easy to use tool that can automatically format a Service Event with the information you provide in the input fields. All of the features found in the previous version have been implemented in this version, as well as a few new improvements: Spellcheck and Send Event. The Spellcheck feature will look at the Reason for Calling field (the second to last field) and alert you to any misspelled words for correction. It will also highlight any misspelled words in red that you can right click to quickly correct without launching the full dialog via the Spellcheck button. The Send Event button will be used when the Synapsys Plugin in Call Center does not load. It will automatically enter the event in to Smartsheet for a ResQ agent to submit for you. This feature does have safeguards in place to ensure you do not enter duplicate events and it will also refer you to enter a tech error form if you use it. Please enjoy using this program and if you have any issues report them to your supervisor who will direct them to the appropriate parties.", wraplength=575, bg=jhblue, fg='white', font="Poppins 18")
+    welcome_message_label.place(x=10, y=5)
+    
+    welcome_checkbutton = tk.Checkbutton(welcome_message_window, font="Poppins 12", variable=welcome_message_status, bg=jhblue)
+    welcome_checkbutton.place(x=145, y=645)
+    welcome_checkbutton_label = tk.Label(welcome_message_window, font="Poppins 12", bg=jhblue, fg='white', text="Show welcome message on startup")
+    welcome_checkbutton_label.place(x = 165, y = 648)
+    welcome_button = tk.Button(welcome_message_window, font="Poppins 12", text="Let's go!", command=close_window)
+    welcome_button.place(x=240, y=690)
+
+#request settings from the agent if no settings file is found, calls AgentSettings.savesettings upon closing
 def request_initial_settings(self):
     config=ConfigParser()
     
@@ -262,61 +317,6 @@ def request_initial_settings(self):
                 MainApplication.customer_name_label.config(text='Customer Name:*')
                 MainApplication.accountnum_label.config(text="Account #")
 
-#show a welcome message
-def welcome_message(setting):
-    config = ConfigParser()
-    ini_file_path = os.path.abspath("ServiceEventGeneratorSettings.ini")
-    welcome_message_status = tk.IntVar()
-
-    if os.path.exists(ini_file_path):
-        with open(ini_file_path, 'r', encoding='utf-8-sig') as f:
-            config.read_file(f)
-        if setting == 1:
-            pass
-        elif config.has_section('main'):
-            if config.get('main', 'welcome message') == 'no':
-                return
-            
-    def close_window():
-        if setting == 1:
-            if welcome_message_status.get() == 1:
-                with open(ini_file_path, 'w') as f:
-                    config.set('main', 'welcome message', 'yes')
-                    config.write(f)
-            welcome_message_window.destroy()
-        else:
-            if config.has_section('main'):
-                pass
-            else:
-                config.add_section('main')
-            if welcome_message_status.get() == 1:
-                with open(ini_file_path, 'w') as f:
-                    config.set('main', 'welcome message', 'yes')
-                    config.write(f)
-            elif welcome_message_status.get() == 0:
-                with open(ini_file_path, 'w') as f:
-                    config.set('main', 'welcome message', 'no')
-                    config.write(f)
-            welcome_message_window.destroy()
-            request_initial_settings(AgentSettings)
-
-    welcome_message_window = tk.Toplevel(root)
-    welcome_message_window.attributes('-topmost', True)
-    welcome_message_window.winfo_toplevel().title("Welcome")
-    welcome_message_window.configure(bg=jhblue)
-    welcome_message_window.geometry('600x745')
-    welcome_message_window.iconphoto(False, image)
-
-    welcome_message_label = tk.Label(welcome_message_window, text="Welcome to the Service Event Generator! The purpose of this program is to give you, the agent, an easy to use tool that can automatically format a Service Event with the information you provide in the input fields. All of the features found in the previous version have been implemented in this version, as well as a few new improvements: Spellcheck and Send Event. The Spellcheck feature will look at the Reason for Calling field (the second to last field) and alert you to any misspelled words for correction. It will also highlight any misspelled words in red that you can right click to quickly correct without launching the full dialog via the Spellcheck button. The Send Event button will be used when the Synapsys Plugin in Call Center does not load. It will automatically enter the event in to Smartsheet for a ResQ agent to submit for you. This feature does have safeguards in place to ensure you do not enter duplicate events and it will also refer you to enter a tech error form if you use it. Please enjoy using this program and if you have any issues report them to your supervisor who will direct them to the appropriate parties.", wraplength=575, bg=jhblue, fg='white', font="Poppins 18")
-    welcome_message_label.place(x=10, y=5)
-    
-    welcome_checkbutton = tk.Checkbutton(welcome_message_window, font="Poppins 12", variable=welcome_message_status, bg=jhblue)
-    welcome_checkbutton.place(x=145, y=645)
-    welcome_checkbutton_label = tk.Label(welcome_message_window, font="Poppins 12", bg=jhblue, fg='white', text="Show welcome message on startup")
-    welcome_checkbutton_label.place(x = 165, y = 648)
-    welcome_button = tk.Button(welcome_message_window, font="Poppins 12", text="Let's go!", command=close_window)
-    welcome_button.place(x=240, y=690)
-
 #Configure name and reference number labels depending on what agent type is set to if there is a settings file already
 def check_settings():
     config = ConfigParser()
@@ -334,14 +334,6 @@ def check_settings():
             MainApplication.customer_name_label.config(text='Customer Name:*')
             MainApplication.accountnum_label.config(text="Account #")
         AgentSettings.agentType = agentType
-        
-# - Colors used for programs color scheme - #
-jhblue = _from_rgb((26, 54, 104))
-highlight = _from_rgb((104, 226, 255))
-
-#Smartsheet API token
-api_token = 'V3fXgr7Mlyo1ORkTq1pkG2OHc5x0O6a1m5mS7'
-
 
 # - Main GUI class and functions - #
 class MainApplication(tk.Frame):
@@ -380,6 +372,7 @@ class MainApplication(tk.Frame):
         self.master.iconphoto(False, image)
         self.master.option_add('*tearOff', False)
     
+    # Create our string variables
     def create_strings(self):
         MainApplication.customer_name = tk.StringVar()
         MainApplication.reference_radio_value = tk.StringVar(value="Account #")
@@ -393,7 +386,8 @@ class MainApplication(tk.Frame):
         MainApplication.phonecopy = str('')
         MainApplication.emailcopy = str('')
         MainApplication.bothcopy = str('')
-        
+
+    # Create our GUI labels    
     def create_labels(self):
         self.app_label = tk.Label(root, bg = jhblue, fg = 'white', text = "Service Event Generator", font = "Poppins 12")
         MainApplication.customer_name_label = tk.Label(root, bg = jhblue, fg = 'white', text = "Customer Name*:")
@@ -413,13 +407,15 @@ class MainApplication(tk.Frame):
         self.reason_copy = tk.Label(root, bg = jhblue, fg = highlight, text = "Copy", font = "Poppins 12 underline", cursor = 'hand2')
         self.required_label = tk.Label(root, bg = jhblue, fg = 'white', font = ('Poppins.Italicized', 10), text = "* Required field for any Service Events going back to the Financial Institution")
         self.copypaste_label = tk.Label(root, bg = jhblue, fg = 'white', font = ('Poppins', 12), text = "Copy and paste to Synapsys")
-        
+
+    # Create our entry fields    
     def create_field_entries(self):
         self.customer_name_entry = tk.Entry(root, textvariable = self.customer_name, width = 33, font = ('Poppins', 14))
         self.reference_number_entry = tk.Entry(root, width = 33, textvariable = self.reference_number, font = ('Poppins', 14))
         self.contact_info_entry = tk.Entry(root, textvariable = self.contact_info, validate = 'all', width = 33, font = ('Poppins', 14))
         self.debit_card_number_entry = tk.Entry(root, textvariable = self.debit_card_number, validate = 'all', validatecommand = (self.check_debit_card_digits_cmd, '%P'), width = 33, font = ('Poppins', 14))
-        
+
+    # Create our radiobuttons    
     def create_radiobuttons(self):
         MainApplication.account_radio_button = tk.Radiobutton(root, variable = self.reference_radio_value, value = "Account #", bg = jhblue, indicatoron = 1)
         self.netteller_radio_button = tk.Radiobutton(root, variable = self.reference_radio_value, value = "Netteller ID", bg = jhblue, indicatoron = 1)
@@ -427,22 +423,26 @@ class MainApplication(tk.Frame):
         self.email_radio_button = tk.Radiobutton(root, variable = self.contact_radio_value, value = "Email Address", bg = jhblue, indicatoron = 1, command = self.radiobutton_wrapper)
         self.both_radio_button = tk.Radiobutton(root, variable = self.contact_radio_value, value = "Both", bg = jhblue, indicatoron = 1, command = self.radiobutton_wrapper)
 
+    #Create our scrollbars
     def create_scrollbars(self): 
         self.transaction_scrollbar = tk.Scrollbar(root, orient = 'vertical')
         self.reason_scrollbar = tk.Scrollbar(root, orient = 'vertical')
         self.event_scrollbar = tk.Scrollbar(root, orient = 'vertical')
-       
+
+    #Create our text entry fields   
     def create_text_entries(self):
         MainApplication.transactions_entry = tk.Text(root, width = 49, font = ('Poppins', 10), wrap = 'word', yscrollcommand = self.transaction_scrollbar.set)
         MainApplication.reason_entry = tk.Text(root, width = 49, font = ('Poppins', 10), wrap = 'word', yscrollcommand = self.reason_scrollbar.set)
         MainApplication.event_entry = tk.Text(root, width = 61, height = 7, font = ('Poppins', 10), wrap = 'word', yscrollcommand = self.event_scrollbar.set)
- 
+    
+    #Create our buttons
     def create_buttons(self):
         self.event_copy = tk.Button(root, text = "Copy text", font = ('Poppins', 12), fg = jhblue)
         self.event_clear_undo = tk.Button(root, textvariable = self.clearundobtntxt, font = ('Poppins', 12), fg = jhblue, command = ClearUndo)
         self.spellcheck_event = tk.Button(root, text = "Spellcheck", font = ('Poppins', 12), fg = jhblue, command=spellcheck)
         self.send_event = tk.Button(root, text = "Send Event", font = ('Poppins', 12), fg = jhblue, command= lambda: SE_smartsheet.smartsheet_event_options(SE_smartsheet, self.sheet_id))
-        
+
+    #set our configurations for the elements we need to set    
     def create_configs(self):
         self.app_label.config(font = ('Poppins, 20'))
         self.customer_name_label.config(font = ('Poppins', 12))
@@ -455,7 +455,8 @@ class MainApplication(tk.Frame):
         self.reason_scrollbar.config(command = self.reason_entry.yview)
         self.event_scrollbar.config(command = self.event_entry.yview)
         self.clearundobtntxt.set("Clear Text")
-        
+
+    # Configure our element placement within our window    
     def configure_element_placement(self):
         self.app_label.place(x = 50, y = 5)
         self.customer_name_label.place(x = 50, y = 50)
@@ -501,7 +502,8 @@ class MainApplication(tk.Frame):
         self.event_clear_undo.place(x = 127, y = 735, height = 60, width = 105)
         self.spellcheck_event.place(x = 243, y = 735, height = 60, width = 105)
         self.send_event.place(x = 360, y = 735, height = 60, width = 105)
-           
+
+    # Create our bindings for buttons/actions to functions       
     def create_bindings(self):
         self.customer_name_copy.bind("<Button-1>", lambda event: self.copy_to_clipboard(None, self.customer_name.get(), "Customer Name"))
         self.reference_number_copy.bind("<Button-1>", lambda event: self.copy_to_clipboard(None, self.reference_number.get(), "Reference Number"))
@@ -529,22 +531,25 @@ class MainApplication(tk.Frame):
 
 # - Operation Functions - ##  
 
+    # change the focus of the cursor to the next entry from the tab button
     def focus_next(self, widgets, current_index, event = None):
         next_index = (current_index + 1) % len(widgets)
         widgets[next_index].focus_set()
         return 'break'
     
+    # change the focus of the cursor to the previous entry from the shift+tab button
     def focus_prev(self, widgets, current_index, event = None):
         next_index = (current_index - 1) % len(widgets)
         widgets[next_index].focus_set()
         return 'break'
 
+    # wrapper function to call the combine text and on text changed function with one function call
     def entry_wrapper(self, event = None):
         self.combine_text(None)
         on_text_changed(None)
 
+    #This is a wrapper function so that the combined text updates if one of the contact radio buttons is selected and no text updated
     def radiobutton_wrapper(self):
-        #This is a wrapper function so that the combined text updates if one of the contact radio buttons is selected and no text updated
         self.contact_update()
         self.combine_text()
 
@@ -561,19 +566,6 @@ class MainApplication(tk.Frame):
         self.clipboard_append(value)
         messagebox.showinfo("Clipboard Updated", f"{value_name} copied to clipboard successfully!")
         return
-     
-# ---- CURRENTLY NOT ACCESSED ---- #
-    #Update the Customer Name and Account Number labels depending on the agent type
-    def update_name(self, agentType):
-        
-        if agentType == 'Credit Union':
-            MainApplication.customer_name_label.config(text = 'Member Name:*')
-            MainApplication.accountnum_label.config(text = "Member #")
-        elif agentType == 'Bank':
-            MainApplication.customer_name_label.config(text = 'Customer Name:*')
-            MainApplication.accountnum_label.config(text = "Account #")
-        else:
-            messagebox.showerror('Settings File Error', 'A settings file error has occured, please delete the settings file and reopen the application')
 
     #Format the phone number contact info entry field to have dashes if it is a 10 digit number 
     def format_phone_number(self, new_value):
@@ -586,18 +578,6 @@ class MainApplication(tk.Frame):
                 MainApplication.formatted_phone_number = formatted_value
             else:   
                 MainApplication.formatted_phone_number = new_value
-
-#THIS FUNCTION MAY NOT BE NEEDED AS USER NOW HAS TO FILL OUT SETTINGS FILE ON FIRST TIME LAUNCH OF NO SETTINGS
-    #Check if the settings file is completed. If not, delete it. 
-    """def check_settings_completed(self):
-        # Load the ServiceEventGeneratorSettings.ini file
-        config = ConfigParser()
-        config.read('ServiceEventGeneratorSettings.ini')
-    
-        # Check if there are any sections other than the main section, if not delete the config file
-        if len(config.options('main')) == 0:
-            os.remove('ServiceEventGeneratorSettings.ini')
-        root.destroy()  """
         
     #Updates the contact info field depending on the radiobutton selected
     def contact_update(self, event = None):
@@ -931,21 +911,16 @@ class MainApplication(tk.Frame):
         else:
             return False
 
-# - Popup window called when selecting set extension from File Menu - #
+
+# - Popup window called when program loads and no settings file is found or when clicking settings button from File Menu - #
 class AgentSettings():
     def __init__(self, master, show_window = True, *args, **kwargs):
         self.master = master
-        #tk.Frame.__init__(self, self.master, *args, **kwargs)
         self.run_flag = 0
         AgentSettings.agentType = tk.StringVar()
         AgentSettings.extension = tk.StringVar()
-        #self.request_settings()
         
-
-
-
-            
-    # - Creates a new top level window for setting the extension with the Agent Setting class- #    
+    # - Creates a new top level window for setting the extension - #    
     def configure_window(self):
         config = ConfigParser()
         self.settings_request_window = tk.Toplevel(self.master)
@@ -981,7 +956,7 @@ class AgentSettings():
             MainApplication.customer_name_label.config(text='Customer Name:*')
             MainApplication.accountnum_label.config(text="Account #")
         
-
+    # - save settings from the agent settings popup window in to the .ini setings file, called from the welcome message function on first time run and also from the settings file menu button - #
     def save_settings(self, settings_window_request):
             ext = str(self.extension.get())
             agent = self.agentType
@@ -1026,8 +1001,8 @@ class AgentSettings():
                     MainApplication.accountnum_label.config(text="Account #")
                 messagebox.showinfo("Settings File Updated", f'Extension has been set to {ext}, and agent type has been set to {agent.get()} in the settings file!')
                 return self.agentType
-            
-            
+    
+    # Check that the extension and agent type are filled in, else throw an error message
     def on_closing(self):
         ext = self.extension.get()
         agent_type = self.agentType.get()
@@ -1036,67 +1011,14 @@ class AgentSettings():
             messagebox.showwarning("Data Input Error", "Please fill in the required fields before closing the window.")
         else:
             self.settings_request_window.destroy()
-    
-    def request_settings(self):
-        self.config=ConfigParser()
-        
-        # Define the main section name
-        main_section = 'main'
-        
-        if os.path.exists('ServiceEventGeneratorSettings.ini'):
-            ini_file_path = os.path.abspath("ServiceEventGeneratorSettings.ini")
-            with codecs.open(ini_file_path, 'r', encoding='utf-8-sig') as f:
-                self.config.read_file(f)
-            # Check if the main section contains the 'agent type' key
-            if self.config.has_option(main_section, 'agent_type'):
-                agent_type = self.config.get(main_section, 'agent_type')
-                if agent_type == 'Credit Union':
-                    MainApplication.customer_name_label.config(text='Member Name:*')
-                    MainApplication.accountnum_label.config(text="Member #")
-                elif agent_type == 'Bank':
-                    MainApplication.customer_name_label.config(text='Customer Name:*')
-                    MainApplication.accountnum_label.config(text="Account #")
 
-            if self.config.has_option(main_section, 'extension'):
-                ext = self.config.get('main', 'extension')
-
-
-        else:
-            self.settings_request_window = tk.Toplevel(self.master)
-            self.settings_request_window.attributes('-topmost', True)
-            self.settings_request_window.iconphoto(False, image)
-            self.settings_request_window.winfo_toplevel().title("Agent Setting")
-            self.settings_request_window.configure(bg=jhblue)
-            self.settings_request_window.geometry('290x200')
-            self.settings_request_window.protocol("WM_DELETE_WINDOW", self.on_closing)
-            AgentSettings.extension = tk.StringVar()
-            AgentSettings.agentType = tk.StringVar()
-            self.info = tk.Label(self.settings_request_window, text= "Please enter your extension and set your agent type", font=('Poppins 14 bold'), bg=jhblue, fg="white", wraplength=280)
-            self.extensionEntry = tk.Entry(self.settings_request_window, textvariable=AgentSettings.extension, width=5, font=("Poppins 14 bold"))
-            self.extension_label = tk.Label(self.settings_request_window, text= "Extension:", font=('Poppins 14 bold'), bg=jhblue, fg="white")
-            self.bank_agentType = tk.Radiobutton(self.settings_request_window, variable=AgentSettings.agentType, value = "Bank", bg = jhblue, indicatoron=1)
-            self.bank_agent_label = tk.Label(self.settings_request_window, text= "Bank Agent", font=('Poppins 14 bold'), bg=jhblue, fg="white")
-            self.cu_agentType = tk.Radiobutton(self.settings_request_window, variable=AgentSettings.agentType, value = "Credit Union", bg = jhblue, indicatoron=1)
-            self.cu_agent_label = tk.Label(self.settings_request_window, text= "CU Agent", font=('Poppins 14 bold'), bg=jhblue, fg="white")
-            self.save = tk.Button(self.settings_request_window, text="Save", command = lambda: self.save_settings())
-            self.info.place(x=20,y=5)
-            self.extensionEntry.place(x=115, y=53, height=25)
-            self.extension_label.place(x=25, y=55)
-            self.bank_agentType.place(x=30, y=90, width=20, height=20)
-            self.cu_agentType.place(x=165, y=90, width=20, height=20)
-            self.bank_agent_label.place(x=50, y=90)
-            self.cu_agent_label.place(x=185, y=90)
-            self.save.place(x=115,y=120)
-
+    # This function is called from pressing the Settings button in the file menu. It will then create a new settings window to request settings and then save them to variables used elsewhere as well as the settings file
     def update_settings(self):
         self.configure_window()
-        if os.path.exists('ServiceEventGeneratorSettings.ini') and self.run_flag == 0:
-            ini_file_path = os.path.abspath("ServiceEventGeneratorSettings.ini")
 
 
-# - Sets up File Menu with drop down options - #
+# - Sets up program File Menu with drop down options - #
 class FileMenu(tk.Menu):
-
 
     def __init__(self, master, main_app, agent_settings):
         self.master = master
@@ -1110,12 +1032,12 @@ class FileMenu(tk.Menu):
         self.fileMenu.add_command(label="Open Welcome Message...", command=lambda: welcome_message(1))
         self.fileMenu.add_command(label="Settings...", command=lambda: AgentSettings.update_settings(self.agent_settings))                
 
+
 # - For clearing text from the entry fields. Saves text from those fields to variables and changes Clear Text button to Undo Clear button to undo the clear if needed - #
 class ClearUndo():
     # Use a class variable to keep track of how many times instance has been run
     _instance_count = 0
 
-    
     def __init__(self):
         # Initialize the class attributes to None
         self.customernamecopy = None
@@ -1137,6 +1059,7 @@ class ClearUndo():
     
     def clear_undo(self):
         
+        # If the clear/undo value is true clear the values
         if self.clear == True:
             # Assign values to the class attributes
             ClearUndo.customernamecopy = MainApplication.customer_name.get()
@@ -1148,6 +1071,7 @@ class ClearUndo():
             ClearUndo.evententrycopy = MainApplication.event_entry.get("1.0", tk.END)
             ClearUndo.contactradiocopy = MainApplication.contact_radio_value.get()
 
+            #Clear fields function
             def clear_fields():
                 MainApplication.customer_name.set("")
                 MainApplication.reference_number.set("")
@@ -1169,6 +1093,7 @@ class ClearUndo():
             MainApplication.clearundobtntxt.set("Undo Clear")
             return
 
+        # If the clear/undo value is false set the values to what we copied
         if self.clear == False:
             MainApplication.clearundobtntxt.set("Clear Text")
             # Use the class attributes in the second if statement
@@ -1277,17 +1202,20 @@ class SpellCheckDialog(tk.Toplevel):
     
 class CustomSmartsheet(smartsheet.Smartsheet):
     run_flag = 0
+    # This is our SE Sheet ID!
     sheet_id = 2320617425921924
     event_details_copy = str('test')
 
+    #Define our picklist column names
     picklist_column_name = 'Banks'
     picklist_column_name_2 = 'Credit Unions'        
     def __init__(self, master, api_token):
         super().__init__(api_token)
         self.master = master
+        #This is our sheet ID!
         self.sheet_id = 2320617425921924
         
-
+    #Function to send synapsys event through smartsheet to be wrapped, uses smartsheet api to add event data on to new row
     def send_event (self, event, sheet_id, row_values):
         columns = self.Sheets.get_columns(sheet_id).to_dict()
         column_name_to_id = {col['title']: col['id'] for col in columns['data']}
@@ -1307,6 +1235,7 @@ class CustomSmartsheet(smartsheet.Smartsheet):
         result = self.Sheets.add_rows(sheet_id, [new_row])
         self.smartsheet_event_window.destroy()
         
+        #Ask the agent if they need to send a tech error form because if they are not able to access synapsys they should
         tech_error_box = messagebox.askyesno("Warning", "Do you need to send a tech error form to report that you are not able to access synapsys?")
         if not tech_error_box:
             return
@@ -1319,6 +1248,7 @@ class CustomSmartsheet(smartsheet.Smartsheet):
                 url = "https://app.smartsheet.com/b/form/01581776b2564281b36ba9fc96f213c8"
                 webbrowser.open(url)
 
+    #Get picklist values to put in our dropdown
     def get_picklist_values(self, sheet_id, column_name):
         columns = self.Sheets.get_columns(sheet_id).to_dict()
 
@@ -1333,13 +1263,12 @@ class CustomSmartsheet(smartsheet.Smartsheet):
     
         raise ValueError(f"Column '{column_name}' not found in the sheet.")
     
+    #Check if we have elapsed the minimum time if the event is the same so that we are not sending a duplicate event
     def check_if_time_elapsed(self, event, start_time, duration):
         current_time = time.time()
         return current_time - start_time <= duration
-    
-#Will need popup window form for these fields: Inquiry or Call Back?, FI depending on Agent Type (Bank or CU), 
 
-    
+    # create a popup window to select some additional required info to send the event
     def smartsheet_event_options(self, event, sheet_id):      
         if self.run_flag == 0:
             self.start_time = time.time()
@@ -1460,5 +1389,10 @@ if __name__ == '__main__':
     #root.protocol("WM_DELETE_WINDOW", main_app.check_settings_completed)
     root.mainloop()
 
-# Pyinstaller command (flags are one file, no console window, clean the cache, yes to overrwrite, set the icon file to the logo  file, add the png to the data for the tkinter windows)
-# pyinstaller --clean -y -F --noconsole --icon="jh.ico" -n "Service Event Generator" --add-data="jh.png;files" 'SE Generator V12.py'
+# Pyinstaller command is below to make the .exe file (flags are one file (not multiple), no console window, clean the cache prior, yes to overrwrite the file, set the icon file to the logo file specified, add the png to the data for the tkinter windows)
+# pyinstaller --clean -y -F --noconsole --additional-hooks-dir=.'hook-data.py' --icon="jh.ico" -n "Service Event Generator" --add-data="jh.png;files" 'Service Event Generator.py'
+
+#Testing pyinstaller command
+# pyinstaller --clean -y -F --icon="jh.ico" -n "Service Event Generator" --add-data="jh.png;files" 'Service Event Generator.py'
+
+# pyinstaller --clean -y -F --additional-hooks-dir=.'hook-data.py' --icon="jh.ico" -n "Service Event Generator" --add-data="jh.png;files" 'Service Event Generator.py'
