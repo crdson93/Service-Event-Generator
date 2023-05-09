@@ -24,6 +24,8 @@ sym_spell = SymSpell(max_dictionary_edit_distance=3, prefix_length=7)
 frequency_count = 10000
 correction_dictionary_path = "S:/All Technical & Support Files/Dictionaries/dictionaryupdates.json"
 
+#test
+
 #open dictionary file
 with open(corp_network_folder, 'r') as dictionary_file:
     dictionary_data = json.load(dictionary_file)
