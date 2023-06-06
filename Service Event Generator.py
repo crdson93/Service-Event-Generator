@@ -27,7 +27,7 @@ correction_dictionary_path = "S:/All Technical & Support Files/Dictionaries/dict
 #test
 
 #open dictionary file
-with open(corp_network_folder, 'r') as dictionary_file:
+with open(jcc_network_drive_folder, 'r') as dictionary_file:
     dictionary_data = json.load(dictionary_file)
 
 for word, count in dictionary_data.items():
@@ -40,7 +40,7 @@ def window_icon():
         image = tk.PhotoImage(file=os.path.join(sys._MEIPASS, "files/jh.png"))
         return image
     else:
-        image = tk.PhotoImage(file="C:\\Users\\cbrichardson\\source\\repos\\Service Event Generator\\jh.png")
+        image = tk.PhotoImage(file="C:\\Users\\cbrichardson\\Documents\\GitHub\\Service-Event-Generator\\jh.png")
         return image
 
 
