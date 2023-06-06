@@ -119,7 +119,7 @@ def spellcheck():
 def on_text_changed(event):
     if MainApplication.reason_entry.after_id is not None:
         MainApplication.reason_entry.after_cancel(MainApplication.reason_entry.after_id)
-    MainApplication.reason_entry.after_id = MainApplication.reason_entry.after(500, update_misspelled_tags)
+    MainApplication.reason_entry.after_id = MainApplication.reason_entry.after(1000, update_misspelled_tags)
 
 #When text entry is updated this function will be called to re-evaluate misspellings
 def update_misspelled_tags(corrected_word=None):
@@ -1273,7 +1273,7 @@ class SpellCheckDialog(tk.Toplevel):
         self.custom_spelling.delete(0, tk.END)
         self.custom_spelling.insert(0, self.suggestion_var.get())
 
-    
+#Smartsheet Window Class
 class CustomSmartsheet(smartsheet.Smartsheet):
     run_flag = 0
     sheet_id = 2320617425921924
@@ -1367,8 +1367,8 @@ class CustomSmartsheet(smartsheet.Smartsheet):
             CustomSmartsheet.fi_list = self.get_picklist_values(self.sheet_id, 'Credit Unions')
         elif AgentSettings.agentType == 'Bank':
             CustomSmartsheet.fi_list = self.get_picklist_values(self.sheet_id, 'Banks')
-        self.label = tk.Label(self.smartsheet_event_window, text="If you are needing to send this Service Event to be submitted for you due to a Synapsys access issue please provide the following information", font=('Poppins 12'), bg=jhblue, fg="white", wraplength=450)
-        self.label.place(x = 10, y = 10)
+        self.label = tk.Label(self.smartsheet_event_window, text="If you are needing to send this Service Event to be submitted for you due to a Synapsys access issue please provide the following information", font=('Poppins 12'), bg=jhblue, fg="white", wraplength=375)
+        self.label.place(x = 35, y = 25)
         self.start_time = time.time()
         if MainApplication.phonecopy == '':
             phone_num = MainApplication.contact_info.get()
