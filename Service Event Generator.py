@@ -339,7 +339,7 @@ jhblue = _from_rgb((26, 54, 104))
 highlight = _from_rgb((104, 226, 255))
 
 #Smartsheet API token
-api_token = 'V3fXgr7Mlyo1ORkTq1pkG2OHc5x0O6a1m5mS7'
+api_token = $API_TOKEN
 
 
 # - Main GUI class and functions - #
