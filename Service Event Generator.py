@@ -12,7 +12,6 @@ import re
 import sys
 
 #SE Geneator Test sheet ID = 2320617425921924
-#Smartsheet token = V3fXgr7Mlyo1ORkTq1pkG2OHc5x0O6a1m5mS7
 
 #Set our network folder for the dictionary that will be static
 jcc_network_drive_folder = "S:/All Technical & Support Files/Dictionaries/SEGeneratorDictionary.json"
